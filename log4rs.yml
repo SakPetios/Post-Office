@@ -1,0 +1,18 @@
+refresh_rate: 30 seconds
+
+appenders:
+  stdout:
+    kind: console
+    encoder:
+      pattern: "{d} [{h({t})}-{L}] {M} - {m}{n}"
+
+root:
+  level: info
+  appenders:
+    - stdout
+
+loggers:
+  example_module:
+    level: debug
+    appenders:
+      - stdout

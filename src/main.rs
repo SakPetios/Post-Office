@@ -1,3 +1,6 @@
+mod backend;
+mod tests;
+mod manager;
 use clap::Parser;
 use cursive::{
     event::Key,
@@ -6,6 +9,9 @@ use cursive::{
     Cursive, CursiveExt, With,
 };
 use log::info;
+use backend::LuaBackend;
+use manager::Manager;
+
 
 #[derive(Parser)]
 #[command(
@@ -29,6 +35,7 @@ struct Args {
 // const LOGO2: &str = "┏┓      ┏┓┏┏•   \n┃┃┏┓┏╋  ┃┃╋╋┓┏┏┓\n┣┛┗┛┛┗  ┗┛┛┛┗┗┗ ";
 struct UserInterface {
     cur: Cursive,
+    mng: Manager
 }
 
 impl UserInterface {
@@ -37,7 +44,7 @@ impl UserInterface {
         siv.set_global_callback('q', |s| s.quit());
         siv.add_global_callback(Key::Esc, |s| s.select_menubar());
 
-        UserInterface { cur: siv }
+        UserInterface { cur: siv,mng:Manager::new("tests".to_string()).unwrap() }
     }
     pub fn init(&mut self) {
         // + Greed User
@@ -68,16 +75,16 @@ impl UserInterface {
                 menu::Tree::new().item(menu::Item::leaf("What's Lua?", |_c| {})), // TODO
             )
             .add_leaf("Exit", |c| c.quit());
+
         // + # Widget Code
-        
+        let tests = &self.mng.list().unwrap();
         self.cur.add_layer(
             LinearLayout::horizontal()
-                .child(Dialog::around(SelectView::<String>::new().with(|_c| {
-                    // for test in tests {
-                    //     c.add_item(test.clone(), test)
-                    // }
+                .child(Dialog::around(SelectView::<String>::new().with(|c| {
+                    for test in tests {
+                        c.add_item(test.clone(), test.to_string())
+                    }
                 })))
-                .child(Dialog::around(TextView::new("Hello"))),
         )
     }
     pub fn run(&mut self) {
