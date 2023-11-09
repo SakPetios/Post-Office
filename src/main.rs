@@ -1,17 +1,19 @@
 mod backend;
-mod tests;
 mod manager;
+mod states;
+mod tests;
+mod traits;
+mod utils;
 use clap::Parser;
 use cursive::{
     event::Key,
     menu,
-    views::{Dialog, LinearLayout, SelectView, TextView},
-    Cursive, CursiveExt, With,
+    views::{Dialog, LinearLayout, SelectView},
+    Cursive, CursiveExt,
 };
 use log::info;
-use backend::LuaBackend;
-use manager::Manager;
-
+use states::HomeState;
+use traits::State;
 
 #[derive(Parser)]
 #[command(
@@ -35,16 +37,15 @@ struct Args {
 // const LOGO2: &str = "┏┓      ┏┓┏┏•   \n┃┃┏┓┏╋  ┃┃╋╋┓┏┏┓\n┣┛┗┛┛┗  ┗┛┛┛┗┗┗ ";
 struct UserInterface {
     cur: Cursive,
-    mng: Manager
 }
 
 impl UserInterface {
     pub fn new() -> Self {
         let mut siv = Cursive::default();
-        siv.set_global_callback('q', |s| s.quit());
+        siv.set_global_callback('q', utils::close);
         siv.add_global_callback(Key::Esc, |s| s.select_menubar());
 
-        UserInterface { cur: siv,mng:Manager::new("tests".to_string()).unwrap() }
+        UserInterface { cur: siv }
     }
     pub fn init(&mut self) {
         // + Greed User
@@ -66,31 +67,47 @@ impl UserInterface {
             .add_subtree(
                 "File",
                 menu::Tree::new()
-                    .item(menu::Item::leaf("Import Test", |_c| {})) // TODO
-                    .item(menu::Item::leaf("Import Tests", |_c| {})), // TODO
+                    .item(menu::Item::leaf("Import Test", utils::unimpl)) // TODO
+                    .item(menu::Item::leaf("Import Tests", utils::unimpl)), // TODO
             )
+            .add_delimiter()
+            .add_leaf("Results", utils::unimpl)
             .add_delimiter()
             .add_subtree(
                 "Help",
-                menu::Tree::new().item(menu::Item::leaf("What's Lua?", |_c| {})), // TODO
+                menu::Tree::new().item(menu::Item::leaf("What's Lua?", utils::unimpl)), // TODO
             )
-            .add_leaf("Exit", |c| c.quit());
+            .add_leaf("Exit", utils::close);
 
-        // + # Widget Code
-        let tests = &self.mng.list().unwrap();
+        //// # Widget Code
+
+        // + Home
         self.cur.add_layer(
-            LinearLayout::horizontal()
-                .child(Dialog::around(SelectView::<String>::new().with(|c| {
-                    for test in tests {
-                        c.add_item(test.clone(), test.to_string())
-                    }
-                })))
+            LinearLayout::horizontal().child(
+                Dialog::around(
+                    SelectView::<states::States>::new()
+                        .item("Home", states::States::Home)
+                        .on_submit(|c, val| match val {
+                            states::States::Home => {
+                                let mut home = HomeState::new();
+                                home.render(c);
+                            }
+                        }),
+                )
+                .title("Welcome!")
+                .button("Quit", utils::close)
+                .button("Close", |c| {
+                    c.pop_layer();
+                }),
+            ),
         )
     }
+
     pub fn run(&mut self) {
         self.cur.run();
     }
 }
+
 fn main() {
     color_backtrace::install();
     log4rs::init_file("log4rs.yml", Default::default()).unwrap();

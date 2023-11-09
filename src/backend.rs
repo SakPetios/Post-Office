@@ -17,6 +17,7 @@ impl LuaBackend {
     }
 
     pub fn init(&mut self) {}
+    
     /// **Runs One Test Expect A Bool From It**
     pub fn run(&mut self, code: String) -> Result<bool,LuaError> {
         let out = self.luac.context(|ctx| ctx.load(&code).eval::<bool>());

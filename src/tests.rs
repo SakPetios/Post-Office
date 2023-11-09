@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod lua_tests {
-    use crate::LuaBackend;
+    use crate::backend::LuaBackend;
     #[test]
     fn simple_evaluation() {
         let mut lua = LuaBackend::new();
@@ -20,7 +20,7 @@ mod lua_tests {
 
 #[cfg(test)]
 mod manager_tests {
-    use crate::Manager;
+    use crate::manager::Manager;
     #[test]
     fn init() {
         let mng = Manager::new("tests".to_string());

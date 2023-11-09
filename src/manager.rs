@@ -3,7 +3,7 @@ use std::{
     io::{self, Error},
     path::Path,
 };
-
+#[derive(Clone)]
 pub struct Manager {
     folder: String,
 }
@@ -14,7 +14,7 @@ impl Manager {
         if !path.exists() {
             return Err(Error::new(io::ErrorKind::NotFound, "Folder Does Not exist"));
         };
-        Ok(Manager { folder: folder })
+        Ok(Manager { folder })
     }
     /// List All Lua Files Inside The Folder
     pub fn list(&mut self) -> io::Result<Vec<String>> {
@@ -31,6 +31,7 @@ impl Manager {
                     .to_str()
                     .unwrap()
                     .to_string()
+                    
             });
         Ok(files.collect())
     }
