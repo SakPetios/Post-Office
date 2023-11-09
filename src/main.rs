@@ -4,6 +4,7 @@ mod states;
 mod tests;
 mod traits;
 mod utils;
+
 use clap::Parser;
 use cursive::{
     event::Key,
@@ -12,7 +13,7 @@ use cursive::{
     Cursive, CursiveExt,
 };
 use log::info;
-use states::HomeState;
+use states::{HomeState, ResultViewer};
 use traits::State;
 
 #[derive(Parser)]
@@ -71,7 +72,14 @@ impl UserInterface {
                     .item(menu::Item::leaf("Import Tests", utils::unimpl)), // TODO
             )
             .add_delimiter()
-            .add_leaf("Results", utils::unimpl)
+            .add_leaf("Home", |c| {
+                let mut home = HomeState::new();
+                home.render(c);
+            })
+            .add_leaf("Results", |c| {
+                let mut testsv = ResultViewer::new();
+                testsv.render(c)
+            })
             .add_delimiter()
             .add_subtree(
                 "Help",
@@ -87,10 +95,15 @@ impl UserInterface {
                 Dialog::around(
                     SelectView::<states::States>::new()
                         .item("Home", states::States::Home)
+                        .item("TestView", states::States::ResultViewer)
                         .on_submit(|c, val| match val {
                             states::States::Home => {
                                 let mut home = HomeState::new();
                                 home.render(c);
+                            }
+                            states::States::ResultViewer => {
+                                let mut testsv = ResultViewer::new();
+                                testsv.render(c)
                             }
                         }),
                 )

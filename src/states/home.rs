@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use cursive::view::Nameable;
-use cursive::views::{Dialog, LinearLayout, SelectView, TextArea, TextView};
+use cursive::views::{Dialog, LinearLayout, SelectView, TextView};
 use cursive::With;
 
 use crate::traits;
