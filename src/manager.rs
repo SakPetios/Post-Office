@@ -1,3 +1,6 @@
+/*
+^ This File Manages The Lua Tests, Lua Blueprints And Pre-executors
+*/
 use std::{
     fs,
     io::{self, Error},
@@ -17,7 +20,7 @@ impl Manager {
         Ok(Manager { folder })
     }
     /// List All Lua Files Inside The Folder
-    pub fn list(&mut self) -> io::Result<Vec<String>> {
+    pub fn list_lua(&mut self) -> io::Result<Vec<String>> {
         let entries = fs::read_dir(&self.folder)?;
         let files = entries
             .filter(|e| {

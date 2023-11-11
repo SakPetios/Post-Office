@@ -16,7 +16,9 @@ impl LuaBackend {
         LuaBackend { luac: Lua::new() }
     }
 
-    pub fn init(&mut self) {} // TODO Add functions
+    pub fn init(&mut self) {
+        
+    } // TODO Add functions
     
     /// **Runs One Test Expect A Bool From It**
     pub fn run(&mut self, code: String) -> Result<bool,LuaError> {

@@ -1,8 +1,8 @@
 mod backend;
-mod manager;
+// mod manager;
 mod states;
 mod tests;
-mod traits;
+mod colls;
 mod utils;
 
 use clap::Parser;
@@ -13,8 +13,8 @@ use cursive::{
     Cursive, CursiveExt,
 };
 use log::info;
-use states::{HomeState, ResultViewer};
-use traits::State;
+use states::*;
+use colls::State;
 
 #[derive(Parser)]
 #[command(
@@ -44,6 +44,7 @@ impl UserInterface {
     pub fn new() -> Self {
         let mut siv = Cursive::default();
         siv.set_global_callback('q', utils::close);
+        siv.set_global_callback(Key::Backspace, |c| {c.pop_layer();});
         siv.add_global_callback(Key::Esc, |s| s.select_menubar());
 
         UserInterface { cur: siv }
@@ -80,6 +81,10 @@ impl UserInterface {
                 let mut testsv = ResultViewer::new();
                 testsv.render(c)
             })
+            .add_leaf("Create Tests", |c| {
+                let mut testsv = CreateRecipe;
+                testsv.render(c)
+            })
             .add_delimiter()
             .add_subtree(
                 "Help",
@@ -95,7 +100,8 @@ impl UserInterface {
                 Dialog::around(
                     SelectView::<states::States>::new()
                         .item("Home", states::States::Home)
-                        .item("TestView", states::States::ResultViewer)
+                        .item("View Tests", states::States::ResultViewer)
+                        .item("Create Test", states::States::RecipeCreator)
                         .on_submit(|c, val| match val {
                             states::States::Home => {
                                 let mut home = HomeState::new();
@@ -104,6 +110,10 @@ impl UserInterface {
                             states::States::ResultViewer => {
                                 let mut testsv = ResultViewer::new();
                                 testsv.render(c)
+                            }
+                            states::States::RecipeCreator => {
+                                let mut testgod = CreateRecipe;
+                                testgod.render(c);
                             }
                         }),
                 )

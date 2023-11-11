@@ -1,3 +1,7 @@
+/*
+^ This File Contains All The Misc DataTypes And Traits
+*/
+
 use cursive::Cursive;
 
 pub trait State {

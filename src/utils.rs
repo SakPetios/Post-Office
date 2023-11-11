@@ -1,3 +1,7 @@
+/*
+^ Utilities
+*/
+
 use std::{fs, io::Error, path::Path};
 
 use cursive::{
@@ -57,9 +61,12 @@ pub fn unimpl(cur: &mut Cursive) {
 pub fn close(cur: &mut Cursive) {
     cur.add_layer(
         Dialog::around(TextView::new("Are you sure you want to quit?"))
-            .button("Yes", |c| c.quit())
             .button("No", |c| {
                 c.pop_layer();
-            }).h_align(cursive::align::HAlign::Center),
+            })
+            .button("Yes", |c| c.quit())
+            .h_align(cursive::align::HAlign::Center),
     )
 }
+
+
