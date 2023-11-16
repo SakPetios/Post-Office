@@ -1,18 +1,17 @@
-refresh_rate: 30 seconds
-
 appenders:
-  stdout:
-    kind: console
+  file:
+    kind: file
+    path: "log/lua.log"
     encoder:
       pattern: "{d} [{h({t})}-{L}] {M} - {m}{n}"
 
 root:
-  level: info
+  level: debug
   appenders:
-    - stdout
+    - file
 
 loggers:
-  example_module:
-    level: debug
+  cursive_core:
+    level: OFF
     appenders:
-      - stdout
+      - file

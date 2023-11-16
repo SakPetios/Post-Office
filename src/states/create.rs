@@ -1,6 +1,6 @@
 use cursive::{
     view::Resizable,
-    views::{Button, Checkbox, Dialog, EditView, LinearLayout, ListView, Panel, TextView},
+    views::{Checkbox, Dialog, EditView, LinearLayout, ListView},
     With,
 };
 use std::path::Path;

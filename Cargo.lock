@@ -740,6 +740,7 @@ dependencies = [
  "log4rs",
  "rlua",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
