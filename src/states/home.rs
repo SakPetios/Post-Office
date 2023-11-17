@@ -1,4 +1,3 @@
-use std::fmt::format;
 use std::path::Path;
 use std::{fs, io};
 
@@ -87,17 +86,35 @@ impl colls::State for HomeState {
                         lua.init();
                         let mut resutls = ResultViewer::new();
                         let res = lua.blueprint(code);
+                        
+                        // + Fetching Standart Output
+                        // ^ Yes it needs to be here
+                        let stdout = match lua.fetch_stdout() {
+                            Ok(std) => std,
+                            Err(er) => {
+                                log::error!("Error Fetching Stdout Buffer");
+                                log::debug!("Erorr Message: {:?}",er); // TODO Remove :? after implementing error
+                                return;
+                            }
+                        };
+                        c.set_user_data(stdout);
+
                         match res {
                             Ok(_) => (),
-                            Err(er) => utils::show_error(
-                                c,
-                                io::Error::new(
-                                    io::ErrorKind::Other,
-                                    format!("LuaBacked::Blueprint returned Error\n{}", er),
-                                ),
-                                Some("Error Running Blue Print"),
-                            ),
+                            Err(er) => {
+                                utils::show_error(
+                                    c,
+                                    io::Error::new(
+                                        io::ErrorKind::Other,
+                                        format!("LuaBacked::Blueprint returned Error\n{}", er),
+                                    ),
+                                    Some("Error Running Blueprint"),
+                                );
+                                return;
+                            }
                         }
+
+                        // + Fetching Results
                         let test_results = lua.fetch();
                         for data in test_results {
                             match data {
@@ -106,6 +123,8 @@ impl colls::State for HomeState {
                                 }
                             }
                         }
+                        
+                        
                         resutls.render(c);
                     }),
                 )

@@ -31,7 +31,7 @@ impl colls::State for ResultViewer {
                 .button("Close", |c| {
                     c.pop_layer();
                 })
-                .button("Quit", utils::close),
+                .button("Quit", utils::close).title("Results"),
             ),
         )
     }

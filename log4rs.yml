@@ -3,7 +3,7 @@ appenders:
     kind: file
     path: "log/lua.log"
     encoder:
-      pattern: "{d} [{h({t})}-{L}] {M} - {m}{n}"
+      pattern: "{d} [{h({t})}-{L} {l}] {M} - {m}{n}"
 
 root:
   level: debug
@@ -12,6 +12,11 @@ root:
 
 loggers:
   cursive_core:
+    level: OFF
+    appenders:
+      - file
+      
+  reqwest:
     level: OFF
     appenders:
       - file

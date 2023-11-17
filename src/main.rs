@@ -1,10 +1,11 @@
 mod backend;
+mod colls;
 mod states;
 mod tests;
-mod colls;
 mod utils;
 
 use clap::Parser;
+use colls::State;
 use cursive::{
     event::Key,
     menu,
@@ -13,7 +14,6 @@ use cursive::{
 };
 use log::info;
 use states::*;
-use colls::State;
 
 #[derive(Parser)]
 #[command(
@@ -43,7 +43,9 @@ impl UserInterface {
     pub fn new() -> Self {
         let mut siv = Cursive::default();
         siv.set_global_callback('q', utils::close);
-        siv.set_global_callback(Key::Backspace, |c| {c.pop_layer();});
+        siv.set_global_callback(Key::Backspace, |c| {
+            c.pop_layer();
+        });
         siv.add_global_callback(Key::Esc, |s| s.select_menubar());
 
         UserInterface { cur: siv }
@@ -76,12 +78,12 @@ impl UserInterface {
                 let mut home = HomeState::new();
                 home.render(c);
             })
-            .add_leaf("Results", |c| {
-                let mut testsv = ResultViewer::new();
-                testsv.render(c)
-            })
             .add_leaf("Create Tests", |c| {
                 let mut testsv = CreateRecipe;
+                testsv.render(c)
+            })
+            .add_leaf("Console", |c| {
+                let mut testsv = Console::new();
                 testsv.render(c)
             })
             .add_delimiter()
@@ -99,20 +101,20 @@ impl UserInterface {
                 Dialog::around(
                     SelectView::<states::States>::new()
                         .item("Home", states::States::Home)
-                        .item("View Tests", states::States::ResultViewer)
                         .item("Create Test", states::States::RecipeCreator)
+                        .item("Lua Console", states::States::LuaConsole)
                         .on_submit(|c, val| match val {
                             states::States::Home => {
                                 let mut home = HomeState::new();
                                 home.render(c);
                             }
-                            states::States::ResultViewer => {
-                                let mut testsv = ResultViewer::new();
-                                testsv.render(c)
-                            }
                             states::States::RecipeCreator => {
                                 let mut testgod = CreateRecipe;
                                 testgod.render(c);
+                            }
+                            states::States::LuaConsole => {
+                                let mut con = Console::new();
+                                con.render(c);
                             }
                         }),
                 )

@@ -14,3 +14,4 @@ log4rs = "1.2.0"
 rlua = "0.19.7"
 serde = {version="1.0.192",features=["derive"]}
 serde_json = "1.0.108"
+reqwest = { version = "0.11", features = ["blocking","json"] }

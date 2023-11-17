@@ -1,8 +1,11 @@
+use crate::colls;
 use log::{debug, error};
 use rlua::{Context, Lua};
 use serde::{Deserialize, Serialize};
-use std::{fs, path::Path};
+use std::{collections::HashMap, fs,  path::Path};
+
 const SIGNATURE: &str = "reportOutPut";
+const BUFFERNAME: &str = "stdBuffer";
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Data {
@@ -24,19 +27,19 @@ impl LuaBackend {
 
             // + Init Test Results Variable
             let udata = Vec::<Data>::new();
-            let jsondata = match serde_json::to_string(&udata) {
-                Ok(dt) => dt,
-                Err(er) => {
-                    log::info!("Error Serializing UserData");
-                    log::error!("Error Message: {}", er);
-                    return;
-                }
-            };
+            let jsondata = serde_json::to_string(&udata).unwrap();
             globals.set(SIGNATURE, jsondata).unwrap();
+
+            // + Create The StdOut Buffer
+            let buff = Vec::<String>::new();
+            let jsonbuff = serde_json::to_string(&buff).unwrap();
+            globals.set(BUFFERNAME, jsonbuff).unwrap();
         });
+
         // + Create Functions
-        
         self.create_testfl();
+        self.create_get();
+        self.create_stdout();
     } // TODO Add functions
     #[allow(unused)]
     /// **Runs One Test Expect A Bool From It**
@@ -66,6 +69,57 @@ impl LuaBackend {
             serde_json::from_str(&raw_data).unwrap()
         })
     }
+    pub fn fetch_stdout(&mut self) -> Result<Vec<String>, ()> {
+        // TODO Add Errors
+        self.luac.context(|ctx| {
+            let globals = ctx.globals();
+            let raw_data: String = match globals.get(BUFFERNAME) {
+                Ok(data) => data,
+                Err(er) => {
+                    log::error!("Error Getting Buffer");
+                    log::debug!("Error message: {}", er);
+                    return Err(());
+                }
+            };
+            match serde_json::from_str(&raw_data) {
+                Ok(buff) => Ok(buff),
+                Err(_er) => Err(()),
+            }
+        })
+    }
+    fn create_get(&self) {
+        self.luac.context(|ctx| {
+            let globals = ctx.globals();
+            let get_method = ctx
+                .create_function(
+                    |_, (url, hdrs): (String, Option<HashMap<String, String>>)| {
+                        let client = reqwest::blocking::Client::new();
+                        let mut req = client.get(&url);
+                        if let Some(headrs) = hdrs {
+                            for (key, value) in headrs {
+                                req = req.header(key, value);
+                            }
+                        }
+
+                        let response = match req.send() {
+                            Ok(rs) => rs,
+                            Err(er) => {
+                                log::error!("Error Sending Request");
+                                log::debug!("Error Message: {}", er);
+                                return Err(rlua::Error::RuntimeError(format!(
+                                    "Error Sending Request\n{}",
+                                    er
+                                )));
+                            }
+                        };
+                        let lua_response = colls::LuaResponse::from(response);
+                        Ok(lua_response)
+                    },
+                )
+                .unwrap();
+            globals.set("get", get_method).unwrap();
+        });
+    }
     fn create_testfl(&self) {
         self.luac.context(|ctx| {
             let globals = ctx.globals();
@@ -91,7 +145,17 @@ impl LuaBackend {
                     };
 
                     // + Update UserData
-                    let test_result = ctx.load(&content).eval::<bool>().unwrap();
+                    let test_result = match ctx.load(&content).eval::<bool>() {
+                        Ok(res) => res,
+                        Err(er) => {
+                            log::error!("Error Running Testfl");
+                            log::debug!("Error Message: {}", er);
+                            return Err(rlua::Error::RuntimeError(format!(
+                                "Error Running testfl\n{}",
+                                er
+                            )));
+                        }
+                    };
                     let result = Data::TestResult {
                         name: file,
                         result: test_result,
@@ -104,6 +168,57 @@ impl LuaBackend {
                 .unwrap();
             globals.set("testfl", test_file).unwrap();
         });
+    }
+    fn create_stdout(&mut self) {
+        self.luac.context(|ctx| {
+            let stdout_func = ctx
+                .create_function(|ctx, stri: String| {
+                    let globals = ctx.globals();
+                    let rawbuff: String = globals.get(BUFFERNAME).unwrap();
+                    let mut buffer: Vec<String> = match serde_json::from_str(&rawbuff) {
+                        Ok(buff) => buff,
+                        Err(er) => {
+                            log::error!("Error Deserizlizing Buffer");
+                            log::debug!("Error message: {}", er);
+                            return Err(rlua::Error::SyntaxError {
+                                message: format!("Unable To Deserialize Buffer\n{}", er),
+                                incomplete_input: false,
+                            });
+                        }
+                    };
+                    buffer.push(stri);
+                    let json_buff = match serde_json::to_string(&buffer) {
+                        Ok(buff) => buff,
+                        Err(er) => {
+                            log::error!("Error Serizlizing Buffer");
+                            log::debug!("Error message: {}", er);
+                            return Err(rlua::Error::SyntaxError {
+                                message: format!("Unable To Serialize Buffer\n{}", er),
+                                incomplete_input: false,
+                            });
+                        }
+                    };
+                    match globals.set(BUFFERNAME, json_buff) {
+                        Ok(_) => (),
+                        Err(er) => {
+                            log::error!("Error Setting Buffer");
+                            log::debug!("Error Message: {}", er);
+                            return Err(er);
+                        }
+                    };
+                    Ok(())
+                })
+                .unwrap();
+            let globals = ctx.globals();
+            match globals.set("stdout", stdout_func) {
+                Ok(_) => (),
+                Err(er) => {
+                    log::error!("Error Setting stdout variable");
+                    log::debug!("Error Message:\n{}", er);
+                    return;
+                }
+            };
+        })
     }
 }
 
