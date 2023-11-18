@@ -9,8 +9,8 @@ use colls::State;
 use cursive::{
     event::Key,
     menu,
-    views::{Dialog, LinearLayout, SelectView},
-    Cursive, CursiveExt,
+    views::{Dialog, LinearLayout, SelectView,},
+    Cursive, CursiveExt
 };
 use log::info;
 use states::*;
@@ -63,7 +63,7 @@ impl UserInterface {
         //         .title("Welcome")
         //         .title_position(cursive::align::HAlign::Left),
         // );
-
+        
         // + Menu bar
         self.cur
             .menubar()
