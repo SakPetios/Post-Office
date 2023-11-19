@@ -20,3 +20,12 @@ loggers:
     level: OFF
     appenders:
       - file
+  
+  postoffice::backend:
+    level: debug
+    appenders:
+     - file
+  postoffice::states::home:
+    level: info
+    appenders:
+     - file

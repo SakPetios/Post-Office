@@ -24,7 +24,7 @@ impl LuaBackend {
     pub fn init(&mut self) {
         self.luac.context(|ctx| {
             let globals = ctx.globals();
-            
+
             // + Init Test Results Variable
             let udata = Vec::<Data>::new();
             let jsondata = serde_json::to_string(&udata).unwrap();
@@ -42,7 +42,7 @@ impl LuaBackend {
         self.create_stdout();
         self.create_assert();
         self.create_post();
-    } // TODO Add functions
+    }
     #[allow(unused)]
     /// **Runs One Test Expect A Bool From It**
     pub fn run(&mut self, code: String) -> Result<bool, rlua::Error> {
@@ -72,7 +72,7 @@ impl LuaBackend {
             serde_json::from_str(&raw_data).unwrap()
         })
     }
-
+    /// Fetches Standart Output
     pub fn fetch_stdout(&mut self) -> Result<Vec<String>, ()> {
         // TODO Add Errors
         self.luac.context(|ctx| {
@@ -91,50 +91,66 @@ impl LuaBackend {
             }
         })
     }
+    /// Creates the post method for Lua
+    ///
+    /// **Arguments**
+    /// - URL
+    /// - body
+    /// - form
+    /// - headers
     fn create_post(&self) {
+        // TODO Add Headers
         self.luac.context(|ctx| {
-            let post_fn =
-                ctx.create_function(
-                    |_,
-                     (url, body, form): (
-                        String,
-                        Option<String>,
-                        Option<HashMap<String, String>>,
-                    )| {
-                        let cli = reqwest::blocking::Client::new();
-                        let mut req = cli.post(&url);
-                        if let Some(bdy) = &body {
-                            req = req.body(bdy.clone());
-                        };
-                        if let Some(frm) = &form {
-                            req = req.form(frm);
-                        };
-
-                        let response = match req.send() {
-                            Ok(resp) => resp,
-                            Err(er) => {
-                                log::error!("Error sending request at {}", &url);
-                                log::debug!("Error message: {}", er);
-                                log::debug!(
-                                    "Function parameters: \nurl: {},body: {:?}",
-                                    &url,
-                                    &body
-                                );
-                                return Err(rlua::Error::RuntimeError(format!(
-                                    "Error Sending Request at: {}, body: {:?}",
-                                    &url,
-                                    &if let Some(bd) = &body {
-                                        &bd[..30]
-                                    } else {
-                                        "No body included"
-                                    }
-                                )));
-                            }
-                        };
-                        let resp = LuaResponse::from(response);
-                        Ok(resp)
-                    },
-                );
+            let post_fn = ctx.create_function(
+                |_,
+                 (url, body, form, headers): (
+                    String,
+                    Option<String>,
+                    Option<HashMap<String, String>>,
+                    Option<HashMap<String, String>>,
+                )| {
+                    // + Create Client & Request
+                    let cli = reqwest::blocking::Client::new();
+                    let mut req = cli.post(&url);
+                    if let Some(bdy) = &body {
+                        req = req.body(bdy.clone());
+                    };
+                    if let Some(frm) = &form {
+                        req = req.form(frm);
+                    };
+                    if let Some(hdrs) = &headers {
+                        for (key,value) in hdrs {
+                            req = req.header(key, value)
+                        }
+                    }
+                    log::info!(
+                        "Sending Post Request at: {} with body: {:?}, form: {:?} and headers: {:?}",
+                        url,
+                        body,
+                        form,
+                        headers
+                    );
+                    let response = match req.send() {
+                        Ok(resp) => resp,
+                        Err(er) => {
+                            log::error!("Error sending request at {}", &url);
+                            log::debug!("Error message: {}", er);
+                            log::debug!("Function parameters: \nurl: {},body: {:?}", &url, &body);
+                            return Err(rlua::Error::RuntimeError(format!(
+                                "Error Sending Request at: {}, body: {:?}",
+                                &url,
+                                &if let Some(bd) = &body {
+                                    &bd[..30]
+                                } else {
+                                    "No body included"
+                                }
+                            )));
+                        }
+                    };
+                    let resp = LuaResponse::from(response);
+                    Ok(resp)
+                },
+            );
             let globals = ctx.globals();
             match globals.set("post", post_fn.unwrap()) {
                 Ok(_) => (),
@@ -145,6 +161,10 @@ impl LuaBackend {
             };
         })
     }
+    /// **Arguments**
+    /// - URL
+    /// - Headers
+    /// - Query Strings
     fn create_get(&self) {
         self.luac.context(|ctx| {
             let globals = ctx.globals();
@@ -162,6 +182,7 @@ impl LuaBackend {
                             hdrs,
                             queries
                         );
+                        // + Create Client - Send Request
                         let client = reqwest::blocking::Client::new();
                         let mut req = client.get(&url);
                         if let Some(headrs) = hdrs {
@@ -194,6 +215,9 @@ impl LuaBackend {
             globals.set("get", get_method).unwrap();
         });
     }
+    /// **Arguments**
+    /// - Name: Name Of The Test
+    /// - Result (boolean)
     fn create_assert(&self) {
         self.luac.context(|ctx| {
             let assert = ctx.create_function(|ctx, (name, result): (String, bool)| {
@@ -215,6 +239,9 @@ impl LuaBackend {
             };
         })
     }
+    /// Reads Lua File and Executes it. Expects Boolean
+    /// **Arguments**
+    /// - File
     fn create_testfl(&self) {
         self.luac.context(|ctx| {
             let globals = ctx.globals();
@@ -264,6 +291,11 @@ impl LuaBackend {
             globals.set("testfl", test_file).unwrap();
         });
     }
+    /// Works like a print function
+    /// the stdout is shown in the LuaConsole
+    /// instead of the console
+    /// **Arguments**
+    /// - Text
     fn create_stdout(&mut self) {
         self.luac.context(|ctx| {
             let stdout_func = ctx
@@ -318,6 +350,9 @@ impl LuaBackend {
 }
 
 /// Updates The SINGATURE variable
+/// Really Importand Function.
+/// This function writes in the SIGNATURE variable the val after seriallizing it to json
+/// The Signature variable holds the test results (Data). It can Also be used for reporting Results
 fn update_report(ctx: &Context, val: Data) {
     let globs = ctx.globals();
 

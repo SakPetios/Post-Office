@@ -22,7 +22,7 @@ impl colls::State for Console {
                 c.pop_layer();
             })
             .button("Quit", utils::close)
-            .button("Reload", |cr| {
+            .button("Load", |cr| {
                 let mut txt = match cr.find_name::<TextView>("stdout_console") {
                     Some(txt) => txt,
                     None => {

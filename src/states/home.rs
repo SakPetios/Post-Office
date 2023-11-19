@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::{fs, io};
 
-use cursive::view::Nameable;
+use cursive::view::{Nameable, Resizable, Scrollable};
 use cursive::views::{Dialog, LinearLayout, SelectView, TextView};
 use cursive::With;
 
@@ -47,7 +47,7 @@ impl colls::State for HomeState {
                                     }
                                 }
                             })
-                            .with_name("select_test"),
+                            .with_name("select_test").max_width(20).max_height(20),
                     )
                     .title("Select Recipe")
                     .button("Close", |c| {
@@ -129,8 +129,8 @@ impl colls::State for HomeState {
                     }),
                 )
                 .child(
-                    Dialog::around(TextView::new("").with_name("blue_print_view_area"))
-                        .title("Recipe"),
+                    Dialog::around(TextView::new("").with_name("blue_print_view_area").scrollable().scroll_y(true))
+                        .title("Recipe").max_height(30).max_width(150),
                 ),
         )
     }

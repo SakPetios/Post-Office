@@ -22,19 +22,3 @@ mod lua_tests {
     }
 }
 
-// #[cfg(test)]
-// mod manager_tests {
-//     use crate::manager::Manager;
-//     #[test]
-//     fn init() {
-//         let mng = Manager::new("tests".to_string());
-//         assert!(mng.is_ok())
-//     }
-//     #[test]
-//     fn load() {
-//         let mut mng = Manager::new("tests".to_string()).unwrap();
-//         let ls = mng.list_lua();
-//         assert!(ls.is_ok());
-//         assert!(!ls.unwrap().is_empty());
-//     }
-// }
